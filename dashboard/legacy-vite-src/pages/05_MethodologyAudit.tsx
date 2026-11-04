@@ -149,10 +149,13 @@ export const MethodologyAudit: React.FC<PageProps> = ({
             </p>
           </div>
 
-          <div className="p-4 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl overflow-x-auto shadow-inner">
+          <div className="p-4 bg-slate-900 text-emerald-400 font-mono text-xs rounded-xl overflow-x-auto shadow-inner space-y-1">
             <code>
-              Class 1 (Miskin) &lt;=&gt; (poverty_rate_p0 &gt; 20.0%) OR (expenditure_per_capita &lt;= 6,250,000 AND sanitation_access_pct &lt;= 56.0%)
+              Class 1 (Miskin) &lt;=&gt; (poverty_rate_p0 &gt; 20.0%) OR (expenditure_per_capita &lt;= 6,250 [Ribu Rp] AND sanitation_access_pct &lt;= 56.0%)
             </code>
+            <p className="text-[10px] text-slate-400 font-sans">
+              *Catatan Satuan: Kolom <code>expenditure_per_capita</code> pada dataset mentah BPS bersatuan <strong>ribu rupiah per kapita disetahunkan</strong> (&le; 6.250 ribu = &le; Rp6,25 Juta/tahun).
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">

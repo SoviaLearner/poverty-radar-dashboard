@@ -34,9 +34,9 @@ export const DistrictsDataModal: React.FC<DistrictsDataModalProps> = ({ isOpen, 
       aria-modal="true"
       aria-labelledby="districts-modal-title"
     >
-      <div className="bg-surface rounded-2xl border border-slate-200 shadow-2xl w-full max-w-6xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
+      <div className="bg-surface rounded-2xl border border-slate-200 shadow-2xl w-[96vw] max-w-7xl max-h-[92vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150">
         {/* Modal Header */}
-        <div className="px-5 py-3.5 border-b border-slate-100 flex items-center justify-between bg-slate-50/70">
+        <div className="px-4 sm:px-5 py-3 border-b border-slate-100 flex items-center justify-between bg-slate-50/70 shrink-0">
           <div className="flex items-center space-x-2.5">
             <div className="p-2 rounded-lg bg-blue-50 text-okabe-blue border border-blue-200/60 shrink-0">
               <Database className="w-4 h-4" />
@@ -65,7 +65,7 @@ export const DistrictsDataModal: React.FC<DistrictsDataModalProps> = ({ isOpen, 
         </div>
 
         {/* Modal Body: DataTable */}
-        <div className="p-4 sm:p-5 overflow-y-auto">
+        <div className="p-3 sm:p-4 overflow-y-auto">
           <DataTable 
             districts={districts} 
             title="Tabel Rincian Profil Sosio-Ekonomi Daerah"

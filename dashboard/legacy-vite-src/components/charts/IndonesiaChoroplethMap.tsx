@@ -191,17 +191,21 @@ export const IndonesiaChoroplethMap: React.FC<IndonesiaMapProps> = ({
     return stats;
   }, [districts, indicator]);
 
-  // Negative metric detection (where high values represent disadvantage)
+  // Negative metric detection (where high values represent disadvantage / vulnerability pressure)
   const isNegativeMetric = useMemo(() => {
-    return indicator === 'poverty_rate_p0' || indicator === 'unemployment_rate_tpt';
+    return indicator === 'poverty_rate_p0' || indicator === 'unemployment_rate_tpt' || indicator === 'labor_participation_tpak';
   }, [indicator]);
 
   // Color scales based on metric direction (Okabe-Ito inspired palette)
   const colorScale = useMemo(() => {
+    if (indicator === 'labor_participation_tpak') {
+      // Neutral-to-vermillion scale for TPAK to indicate subsistence work pressure without misleading "blue = good"
+      return ['#F8FAFC', '#F0E442', '#E69F00', '#D55E00'];
+    }
     return isNegativeMetric
       ? ['#0072B2', '#56B4E9', '#F0E442', '#E69F00', '#D55E00']
       : ['#D55E00', '#E69F00', '#F0E442', '#56B4E9', '#0072B2'];
-  }, [isNegativeMetric]);
+  }, [isNegativeMetric, indicator]);
 
   // National min and max range
   const { nationalMinRange, nationalMaxRange } = useMemo(() => {
@@ -348,7 +352,11 @@ export const IndonesiaChoroplethMap: React.FC<IndonesiaMapProps> = ({
         visualMap: {
           min: nationalMinRange,
           max: nationalMaxRange,
-          text: ['Tinggi', 'Rendah'],
+          text: indicator === 'labor_participation_tpak'
+            ? ['Tinggi (Tekanan Subsistensi)', 'Rendah (Pilihan Formal)']
+            : (indicator === 'poverty_rate_p0' || indicator === 'unemployment_rate_tpt'
+                ? ['Tinggi (Defisit)', 'Rendah (Aman)']
+                : ['Tinggi (Unggul)', 'Rendah (Defisit)']),
           realtime: true,
           calculable: true,
           orient: 'horizontal',
@@ -464,7 +472,11 @@ export const IndonesiaChoroplethMap: React.FC<IndonesiaMapProps> = ({
         visualMap: {
           min: localMin,
           max: localMax,
-          text: ['Tinggi', 'Rendah'],
+          text: indicator === 'labor_participation_tpak'
+            ? ['Tinggi (Tekanan Subsistensi)', 'Rendah (Pilihan Formal)']
+            : (indicator === 'poverty_rate_p0' || indicator === 'unemployment_rate_tpt'
+                ? ['Tinggi (Defisit)', 'Rendah (Aman)']
+                : ['Tinggi (Unggul)', 'Rendah (Defisit)']),
           realtime: true,
           calculable: true,
           orient: 'horizontal',

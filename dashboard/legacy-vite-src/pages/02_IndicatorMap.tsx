@@ -285,11 +285,33 @@ export const IndicatorMap: React.FC<PageProps> = ({ districts }) => {
       </div>
 
       {/* Narrative Callout for Dualism & Working Poor */}
-      <NarrativeCallout
-        title="WAWASAN DUALISME SPASIAL & KERJA SUBSISTENSI"
-        insight="Kabupaten menanggung kemiskinan 1.9x lebih tinggi dari kota, sementara pengangguran rendah di wilayah miskin mencerminkan kerja subsistensi bertahan hidup (r = +0.462), bukan tingginya kemakmuran ekonomi."
-        evidence="Rasio P0 Kab:Kota = 1.87x; Rasio TPT Kota:Kab = 1.82x; Nduga TPAK 97.93% dengan TPT 0.00%."
-      />
+      {(() => {
+        const kabs = districts.filter(d => d.tipe_wilayah === 'Kabupaten');
+        const kotas = districts.filter(d => d.tipe_wilayah === 'Kota');
+        const mean = (arr: number[]) => arr.length ? arr.reduce((a, b) => a + b, 0) / arr.length : 0;
+        const kabMeanP0 = mean(kabs.map(d => d.poverty_rate_p0));
+        const kotaMeanP0 = mean(kotas.map(d => d.poverty_rate_p0));
+        const kabMeanTpt = mean(kabs.map(d => d.unemployment_rate_tpt));
+        const kotaMeanTpt = mean(kotas.map(d => d.unemployment_rate_tpt));
+        const p0Ratio = (kabs.length > 0 && kotas.length > 0 && kotaMeanP0 > 0) ? (kabMeanP0 / kotaMeanP0).toFixed(2) : null;
+        const tptRatio = (kabs.length > 0 && kotas.length > 0 && kabMeanTpt > 0) ? (kotaMeanTpt / kabMeanTpt).toFixed(2) : null;
+
+        return (
+          <NarrativeCallout
+            title="WAWASAN DUALISME SPASIAL & KERJA SUBSISTENSI"
+            insight={
+              p0Ratio 
+                ? `Kabupaten menanggung kemiskinan ~${p0Ratio}x lebih tinggi dari kota, sementara pengangguran rendah di wilayah miskin mencerminkan kerja subsistensi bertahan hidup (The Working Poor), bukan tingginya kemakmuran ekonomi.`
+                : "Pada seleksi wilayah aktif, pengangguran rendah di kantong perdesaan mencerminkan kerja subsistensi bertahan hidup (The Working Poor), bukan tingginya kemakmuran ekonomi."
+            }
+            evidence={
+              p0Ratio && tptRatio
+                ? `Rasio P0 Kab:Kota = ${p0Ratio}x; Rasio TPT Kota:Kab = ${tptRatio}x; Nduga TPAK 97.93% dengan TPT 0.00%.`
+                : "Nduga TPAK 97.93% dengan TPT 0.00%; asosiasi statistik mengindikasikan tekanan bertahan hidup, bukan hubungan sebab-akibat."
+            }
+          />
+        );
+      })()}
     </motion.div>
   );
 };

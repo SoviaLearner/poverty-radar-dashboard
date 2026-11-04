@@ -77,13 +77,6 @@ export const WorkingPoorScatter: React.FC<WorkingPoorProps> = ({ districts }) =>
         opacity: 0.85
       }
     }));
-          [
-            { coord: [Math.round(minX * 100) / 100, Math.round(yStart * 100) / 100] },
-            { coord: [Math.round(maxX * 100) / 100, Math.round(yEnd * 100) / 100] }
-          ]
-        ];
-      }
-    }
 
     return {
       tooltip: {
@@ -141,11 +134,11 @@ export const WorkingPoorScatter: React.FC<WorkingPoorProps> = ({ districts }) =>
           type: 'scatter',
           symbolSize: 7,
           data: data,
-          markLine: {
+          markLine: hasEnoughSample && regressionData.length > 0 ? {
             silent: true,
             symbol: ['none', 'none'],
             label: {
-              formatter: `Garis Tren OLS (r = ${r >= 0 ? '+' : ''}${r.toFixed(3)}, Asosiasi Linier)`,
+              formatter: `Garis Tren OLS (r = ${rValue !== null && rValue >= 0 ? '+' : ''}${rValue !== null ? rValue.toFixed(3) : 'N/A'}, Asosiasi Linier)`,
               position: 'insideEndTop',
               color: '#0072B2',
               fontWeight: 'bold',
@@ -157,11 +150,11 @@ export const WorkingPoorScatter: React.FC<WorkingPoorProps> = ({ districts }) =>
               width: 1.8
             },
             data: regressionData
-          }
+          } : undefined
         }
       ]
     };
-  }, [districts]);
+  }, [districts, regressionData, rValue, hasEnoughSample]);
 
   const echartsRef = useRef<any>(null);
 
