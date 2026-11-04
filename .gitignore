@@ -65,6 +65,7 @@ data/raw/bps_2023/
 node_modules/
 **/node_modules/
 **/.next/
+**/.next-dev/
 **/out/
 dist/
 **/dist/
