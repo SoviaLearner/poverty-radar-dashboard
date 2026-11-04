@@ -65,6 +65,8 @@ data/raw/bps_2023/
 # Node.js & Frontend Build Outputs
 node_modules/
 **/node_modules/
+**/.next/
+**/out/
 dist/
 **/dist/
 .vite/
