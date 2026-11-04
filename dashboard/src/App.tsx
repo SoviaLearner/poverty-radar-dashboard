@@ -151,18 +151,61 @@ const auditMetrics = [
 ]
 function Methodology({rows}:{rows:District[]}) {
   const [field,setField]=useState<keyof District>('poverty_rate_p0'),[search,setSearch]=useState('')
-  const meta=auditMetrics.find(x=>x.key===field) ?? auditMetrics[0], values=rows.map(r=>Number(r[field])).filter(Number.isFinite), q=quartiles(values), iqr=q.q3-q.q1, lowFence=q.q1-1.5*iqr, highFence=q.q3+1.5*iqr, outliers=rows.filter(r=>Number(r[field])<lowFence||Number(r[field])>highFence), min=Math.min(...values),max=Math.max(...values)
-  const samples=['Kota Surakarta','Cilacap','Banyumas'].map(n=>rows.find(r=>r.kab_kota===n)).filter((r):r is District=>Boolean(r))
-  const zeroCases=[{label:'Sanitasi layak',field:'sanitation_access_pct' as const},{label:'Air minum layak',field:'clean_water_access_pct' as const},{label:'TPT',field:'unemployment_rate_tpt' as const}].map(item=>({...item,rows:rows.filter(r=>r[item.field]===0)}))
-  const searchRows=auditMetrics.filter(m=>m.label.toLowerCase().includes(search.toLowerCase()))
-  const metricLabel=(key:keyof District)=>auditMetrics.find(m=>m.key===key)?.label ?? String(key)
-  const scale=(v:number)=>80+(v-min)/(max-min||1)*760
-  return <><div className="method-banner"><span>▤</span><div><h2>P0 tidak dipakai untuk membentuk kelompok</h2><p>Masuk klaster memakai tujuh indikator sosial-ekonomi. Setelah kelompok terbentuk, P0 digunakan untuk membandingkan hasilnya.</p></div></div><div className="audit-kpis chart-enter"><div><small>KABUPATEN/KOTA</small><b>{rows.length}</b><p>Jumlah kabupaten/kota yang ditampilkan.</p></div><div><small>PROVINSI</small><b>{new Set(rows.map(r=>r.provinsi)).size}</b><p>Wilayah dikelompokkan menurut provinsi.</p></div><div><small>PETA</small><b>34 provinsi</b><p>Nilai kabupaten/kota dirata-ratakan per provinsi.</p></div><div><small>KELOMPOK WILAYAH</small><b>{new Set(rows.map(r=>r.cluster_id)).size} kelompok</b><p>Dibentuk dari tujuh indikator, tanpa P0.</p></div></div><div className="overview-grid"><Panel eyebrow="CONTOH CEK DATA" title="Angka P0 pada tiga kabupaten/kota" description="Nilai berikut dibaca langsung dari berkas data yang digunakan dashboard."><div className="sample-list">{samples.map(r=><div key={r.kab_kota}><b>{r.kab_kota}</b><span>{titleCase(r.provinsi)}</span><strong>{percent(r.poverty_rate_p0)}</strong></div>)}</div><small className="method-note">Contoh ini memudahkan penelusuran kembali ke baris data masing-masing.</small></Panel><Panel eyebrow="NILAI 0 DALAM DATA" title="Nilai nol tetap ditampilkan" description="Nilai nol pada berkas dipertahankan dan tidak diubah menjadi data kosong."><div className="zero-list">{zeroCases.map(r=><div key={r.field}><b>{r.label}</b><strong>{r.rows.length} wilayah</strong><span>{r.rows.map(x=>x.kab_kota).join(', ') || 'Tidak ada'}</span></div>)}</div></Panel></div>
-    <Panel eyebrow="PENANDAAN NILAI EKSTREM · TUKEY 1,5 × IQR" title={`${outliers.length} nilai berada di luar rentang umum untuk ${meta.label.toLowerCase()}`} description={`Titik menunjukkan nilai di luar Q1 − 1,5×IQR hingga Q3 + 1,5×IQR. Nilai tetap dipertahankan; penanda ini tidak otomatis berarti data keliru.`}><div className="method-controls"><label>Indikator<select value={field} onChange={e=>setField(e.target.value as keyof District)}>{auditMetrics.map(m=><option key={m.key} value={m.key}>{m.label}</option>)}</select></label></div><div className="tukey-chart"><div className="tukey-axis"><span>{fmtValue(min,1)}</span><span>{fmtValue((min+max)/2,1)}</span><span>{fmtValue(max,1)} {meta.unit}</span></div><div className="tukey-plot"><div className="whisker" style={{left:`${scale(Math.max(min,lowFence)) / 920*100}%`,width:`${(scale(Math.min(max,highFence))-scale(Math.max(min,lowFence)))/920*100}%`}}/><div className="box" style={{left:`${scale(q.q1)/920*100}%`,width:`${(scale(q.q3)-scale(q.q1))/920*100}%`}}/><div className="median-line" style={{left:`${scale(q.median)/920*100}%`}}/><span className="quartile-label q1" style={{left:`${scale(q.q1)/920*100}%`}}>Q1 {fmtValue(q.q1,1)}</span><span className="quartile-label q3" style={{left:`${scale(q.q3)/920*100}%`}}>Q3 {fmtValue(q.q3,1)}</span><span className="quartile-label med-label" style={{left:`${scale(q.median)/920*100}%`}}>Median {fmtValue(q.median,1)}</span>{outliers.map((r,i)=><i className="outlier-dot" key={`${r.kab_kota}-${i}`} title={`${r.kab_kota}: ${fmtValue(Number(r[field]),2)} ${meta.unit}`} style={{left:`${scale(Number(r[field]))/920*100}%`,top:`${36+(i%5)*8}%`}}/>)}</div><div className="tukey-stats"><span>Batas bawah <b>{fmtValue(lowFence,2)}</b></span><span>Batas atas <b>{fmtValue(highFence,2)}</b></span><span>Satuan <b>{meta.unit}</b></span><span>Nilai ekstrem tidak dihapus</span></div></div></Panel>
-    <Panel eyebrow="KAMUS DATA" title="Peran setiap indikator" description="P0 adalah hasil pembanding setelah kelompok terbentuk; tidak digunakan sebagai fitur pembentukan klaster."><div className="dictionary-head"><input value={search} onChange={e=>setSearch(e.target.value)} placeholder="Cari indikator…"/><a className="download-btn" href="/data/poverty_clusters.csv" download>Unduh CSV</a></div><div className="table-wrap"><table><thead><tr><th>Indikator</th><th>Satuan</th><th>Masuk klaster</th><th>Dipakai di skrining</th></tr></thead><tbody>{searchRows.map(m=><tr key={m.key}><td>{m.label}</td><td>{m.unit}</td><td>{m.clusters}</td><td>{m.screening}</td></tr>)}</tbody></table></div></Panel><Panel eyebrow="METODOLOGI" title="K-Means mengelompokkan profil, bukan memprediksi kemiskinan" description="Indikator pembentuk kelompok: lama sekolah, harapan hidup, pengeluaran per kapita, sanitasi, air minum, TPT, dan log PDRB. P0, HDI, TPAK, label kelas sumber, skor kerentanan, dan anomali tidak menjadi fitur clustering."><div className="method-steps"><div><b>1</b><span>Audit 514 baris</span><small>Nilai ekstrem/0 yang faktual dipertahankan.</small></div><div><b>2</b><span>Masuk klaster</span><small>Empat profil wilayah dari tujuh indikator.</small></div><div><b>3</b><span>Dipakai di skrining relatif</span><small>P0 dan skor kerentanan dibandingkan dengan median data.</small></div></div></Panel>
+  const meta=auditMetrics.find(item=>item.key===field) ?? auditMetrics[0]
+  const values=rows.map(row=>Number(row[field])).filter(Number.isFinite)
+  const q=quartiles(values), iqr=q.q3-q.q1
+  const lowFence=q.q1-1.5*iqr, highFence=q.q3+1.5*iqr
+  const min=Math.min(...values), max=Math.max(...values)
+  const typicalLow=Math.max(min,lowFence), typicalHigh=Math.min(max,highFence)
+  const outliers=rows.filter(row=>Number(row[field])<lowFence||Number(row[field])>highFence)
+    .sort((a,b)=>Math.abs(Number(b[field])-q.median)-Math.abs(Number(a[field])-q.median))
+  const samples=['Kota Surakarta','Cilacap','Banyumas'].map(name=>rows.find(row=>row.kab_kota===name)).filter((row):row is District=>Boolean(row))
+  const zeroCases=[
+    {label:'Sanitasi layak',field:'sanitation_access_pct' as const},
+    {label:'Air minum layak',field:'clean_water_access_pct' as const},
+    {label:'Pengangguran terbuka',field:'unemployment_rate_tpt' as const},
+  ].map(item=>({...item,rows:rows.filter(row=>row[item.field]===0)}))
+  const searchRows=auditMetrics.filter(item=>item.label.toLowerCase().includes(search.toLowerCase()))
+  const position=(value:number)=>`${Math.max(0,Math.min(100,(value-min)/(max-min||1)*100))}%`
+  const shortList=outliers.slice(0,6)
+  return <>
+    <div className="method-banner"><span>i</span><div><h2>Ringkasan data untuk bahan telaah</h2><p>Gunakan gambaran ini untuk melihat daerah yang perlu diperhatikan, lalu cocokkan dengan kondisi terbaru dan informasi dari pemerintah daerah.</p></div></div>
+    <div className="audit-kpis chart-enter">
+      <div><small>CAKUPAN</small><b>{rows.length} daerah</b><p>Kabupaten/kota yang tercatat.</p></div>
+      <div><small>PROVINSI</small><b>{new Set(rows.map(row=>row.provinsi)).size}</b><p>Provinsi yang terwakili dalam data.</p></div>
+      <div><small>TAHUN DATA</small><b>2021</b><p>Sumber: data BPS yang digunakan proyek.</p></div>
+      <div><small>PROFIL DAERAH</small><b>{new Set(rows.map(row=>row.cluster_id)).size} kelompok</b><p>Dibentuk dari kemiripan kondisi sosial-ekonomi.</p></div>
+    </div>
+    <div className="overview-grid stakeholder-grid">
+      <Panel eyebrow="APA ARTINYA" title="Kelompok membantu membandingkan kondisi daerah" description="Daerah dalam kelompok yang sama memiliki profil indikator yang mirip. Kelompok bukan peringkat, label miskin, atau rekomendasi bantuan otomatis.">
+        <div className="stakeholder-points"><div><b>Untuk menyusun telaah</b><p>Lihat indikator yang paling tertinggal di suatu kelompok dan tentukan daerah yang perlu ditinjau lebih lanjut.</p></div><div><b>Untuk membaca P0</b><p>Angka P0 dipakai untuk membandingkan hasil kelompok, bukan untuk membentuk kelompoknya.</p></div><div><b>Sebelum mengambil keputusan</b><p>Cocokkan temuan dengan data terbaru, kondisi lapangan, dan program yang sudah berjalan.</p></div></div>
+      </Panel>
+      <Panel eyebrow="CONTOH ANGKA P0" title="Tiga daerah, tiga nilai berbeda" description="Contoh ini menunjukkan cara membaca angka pada berkas data.">
+        <div className="sample-list">{samples.map(row=><div key={row.kab_kota}><b>{row.kab_kota}</b><span>{titleCase(row.provinsi)}</span><strong>{percent(row.poverty_rate_p0)}</strong></div>)}</div>
+        <small className="method-note">P0 adalah persentase penduduk yang berada di bawah garis kemiskinan.</small>
+      </Panel>
+    </div>
+    <Panel eyebrow="RENTANG NILAI" title={`Sebagian besar nilai ${meta.label.toLowerCase()} berada di area berwarna`} description="Area berwarna menunjukkan rentang umum pada data. Nilai di luar area ditandai agar mudah diperiksa; penanda ini tidak berarti datanya salah.">
+      <div className="method-controls"><label>Indikator<select value={field} onChange={event=>setField(event.target.value as keyof District)}>{auditMetrics.map(item=><option key={item.key} value={item.key}>{item.label}</option>)}</select></label></div>
+      <div className="range-summary"><div className="range-labels"><span>Terendah <b>{fmtValue(min,1)} {meta.unit}</b></span><span>Tertinggi <b>{fmtValue(max,1)} {meta.unit}</b></span></div><div className="range-track" role="img" aria-label={`Rentang ${meta.label}: ${fmtValue(min,1)} hingga ${fmtValue(max,1)} ${meta.unit}`}><i className="range-common" style={{left:position(typicalLow),width:`${Math.max(1,Number(position(typicalHigh).replace('%',''))-Number(position(typicalLow).replace('%','')))}%`}}/><i className="range-median" style={{left:position(q.median)}} title={`Nilai tengah: ${fmtValue(q.median,1)} ${meta.unit}`}/>{outliers.map((row,index)=><i className="range-outlier" key={`${row.kab_kota}-${index}`} style={{left:position(Number(row[field]))}} title={`${row.kab_kota}: ${fmtValue(Number(row[field]),2)} ${meta.unit}`}/>)}</div><div className="range-key"><span><i className="key-common"/>Rentang umum</span><span><i className="key-median"/>Nilai tengah</span><span><i className="key-outlier"/>Perlu ditinjau</span></div></div>
+      <div className="outlier-summary"><b>{outliers.length} daerah ditandai untuk ditinjau</b><span>Metode ini menandai nilai yang jauh dari sebaran umum. Periksa kembali sumber dan konteks daerah sebelum menarik kesimpulan.</span></div>
+      {shortList.length>0&&<div className="outlier-list">{shortList.map(row=><div key={`${row.provinsi}-${row.kab_kota}`}><b>{row.kab_kota}</b><span>{titleCase(row.provinsi)}</span><strong>{fmtValue(Number(row[field]),2)} {meta.unit}</strong></div>)}</div>}
+    </Panel>
+    <div className="overview-grid stakeholder-grid">
+      <Panel eyebrow="KUALITAS DATA" title="Nilai nol tetap dicatat" description="Nilai 0 pada berkas tidak diubah menjadi data kosong. Periksa konteksnya sebelum menafsirkan angka tersebut.">
+        <div className="zero-list">{zeroCases.map(item=><div key={item.field}><b>{item.label}</b><strong>{item.rows.length} daerah</strong><span>{item.rows.map(row=>row.kab_kota).join(', ')||'Tidak ada nilai 0'}</span></div>)}</div>
+      </Panel>
+      <Panel eyebrow="CARA PENGELOMPOKAN" title="Tujuh indikator membentuk profil daerah" description="Pendidikan, pengeluaran, kesehatan, sanitasi, air minum, pengangguran terbuka, dan PDRB dipakai untuk mencari daerah dengan kondisi serupa.">
+        <div className="stakeholder-note"><b>P0 tidak ikut membentuk kelompok.</b><p>Pemisahan ini membuat angka kemiskinan tetap bisa dipakai sebagai pembanding yang berdiri sendiri. Hasil pengelompokan bersifat deskriptif dan tidak menjelaskan penyebab kemiskinan.</p></div>
+      </Panel>
+    </div>
+    <Panel eyebrow="KAMUS DATA" title="Arti indikator dalam dashboard" description="Tabel ini menjelaskan satuan dan peran tiap indikator. Unduh data untuk menelusuri angka per kabupaten/kota.">
+      <div className="dictionary-head"><input value={search} onChange={event=>setSearch(event.target.value)} placeholder="Cari nama indikator…"/><a className="download-btn" href="/data/poverty_clusters.csv" download>Unduh data (CSV)</a></div>
+      <div className="table-wrap"><table><thead><tr><th>Indikator</th><th>Satuan</th><th>Dipakai untuk profil</th><th>Dipakai untuk penapisan</th></tr></thead><tbody>{searchRows.map(item=><tr key={item.key}><td>{item.label}</td><td>{item.unit}</td><td>{item.clusters==='Ya'?'Ya':item.clusters==='Tidak'?'Tidak':'Sebagai konteks'}</td><td>{item.screening==='Ya'?'Ya':item.screening==='Tidak'?'Tidak':'Sebagai konteks'}</td></tr>)}</tbody></table></div>
+    </Panel>
+    <div className="stakeholder-caveat"><b>Catatan penggunaan</b><p>Data menggambarkan kondisi tahun 2021. Gunakan sebagai titik awal diskusi dan penentuan wilayah yang perlu ditelaah, bukan satu-satunya dasar untuk menetapkan penerima atau anggaran.</p></div>
   </>
 }
-
 export function App() {
   const [districts,setDistricts]=useState<District[]>([]),[error,setError]=useState(''),[page,setPage]=useState<PageId>('overview'),[province,setProvince]=useState('all'),[mapMetric,setMapMetric]=useState('poverty_rate_p0')
   useEffect(()=>{fetch('/data/poverty_clusters.csv').then(r=>{if(!r.ok)throw new Error('CSV processed tidak dapat dimuat');return r.text()}).then(text=>setDistricts(parseDistricts(text))).catch(e=>setError(e.message))},[])
